@@ -6,20 +6,32 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "seed": "bun prisma/seed.ts",
+    "test:prisma": "bun scripts/test-prisma.ts",
+    "test:service": "bun scripts/test-project-service.ts",
+    "test:elysia": "bun scripts/test-elysia-app.ts",
+    "test:eden": "bun scripts/test-eden.ts"
   },
   "dependencies": {
+    "@elysiajs/eden": "^1.4.9",
+    "@prisma/adapter-pg": "^7.8.0",
+    "@prisma/client": "^7.8.0",
+    "elysia": "^1.4.28",
     "next": "16.2.7",
+    "pg": "^8.21.0",
     "react": "19.2.4",
     "react-dom": "19.2.4"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
+    "@types/pg": "^8.20.0",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.2.7",
+    "prisma": "^7.8.0",
     "tailwindcss": "^4",
     "typescript": "^5"
   },
