@@ -1,36 +1,300 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# E2E Next.js + Elysia + Prisma
 
-## Getting Started
+A learning project for building a read-only API with:
 
-First, run the development server:
+- Bun
+- Next.js App Router
+- Elysia
+- Eden Treaty for end-to-end type safety
+- Prisma ORM v7
+- PostgreSQL via Docker Compose
+
+## Goal
+
+This project demonstrates how to run a Next.js application as the main app while mounting an Elysia server inside a Next.js Route Handler.
+
+The API reads project data from PostgreSQL through Prisma and exposes type-safe access to the frontend through Eden Treaty.
+
+## Stack
+
+- Runtime / package manager: Bun
+- Frontend: Next.js App Router
+- API framework: Elysia
+- Type-safe client: Eden Treaty
+- ORM: Prisma v7
+- Database: PostgreSQL
+- Local database runtime: Docker Compose
+
+## Architecture
+
+```txt
+Browser / Next.js Page
+        ↓
+Eden Treaty Client
+        ↓
+Next.js Route Handler: app/api/[[...slugs]]/route.ts
+        ↓
+Elysia App: src/server/app.ts
+        ↓
+Project Route: src/server/routes/project.route.ts
+        ↓
+Project Service: src/server/services/project.service.ts
+        ↓
+Project Repository: src/server/repositories/project.repository.ts
+        ↓
+Prisma Client: src/db/prisma.ts
+        ↓
+PostgreSQL Docker Container
+```
+
+## Project Structure
+
+```txt
+app/
+├── api/
+│   └── [[...slugs]]/
+│       └── route.ts
+├── projects/
+│   ├── [slug]/
+│   │   └── page.tsx
+│   └── page.tsx
+├── layout.tsx
+└── page.tsx
+
+src/
+├── client/
+│   ├── helpers/
+│   │   └── api-response.ts
+│   └── treaty.ts
+├── db/
+│   └── prisma.ts
+├── generated/
+│   └── prisma/
+└── server/
+    ├── app.ts
+    ├── domain/
+    │   └── project.constants.ts
+    ├── repositories/
+    │   └── project.repository.ts
+    ├── routes/
+    │   └── project.route.ts
+    └── services/
+        └── project.service.ts
+
+prisma/
+├── migrations/
+├── schema.prisma
+└── seed.ts
+
+scripts/
+├── test-eden.ts
+├── test-elysia-app.ts
+├── test-prisma.ts
+└── test-project-service.ts
+```
+
+## Environment Variables
+
+Create a `.env` file:
+
+```env
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/e2e_nextjs_elysia?schema=public"
+NEXT_PUBLIC_API_URL="http://localhost:3000/api"
+```
+
+## Start PostgreSQL
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
+docker compose up -d
+```
+
+Check database readiness:
+
+```bash
+docker exec e2e-nextjs-elysia-postgres pg_isready -U postgres
+```
+
+Open psql:
+
+```bash
+docker exec -it e2e-nextjs-elysia-postgres psql -U postgres -d e2e_nextjs_elysia
+```
+
+## Prisma Commands
+
+Generate Prisma Client:
+
+```bash
+bunx prisma generate
+```
+
+Run migration:
+
+```bash
+bunx prisma migrate dev
+```
+
+Check migration status:
+
+```bash
+bunx prisma migrate status
+```
+
+Seed database:
+
+```bash
+bun run seed
+```
+
+## Development
+
+Start Next.js:
+
+```bash
 bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```txt
+http://localhost:3000
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Projects page:
 
-## Learn More
+```txt
+http://localhost:3000/projects
+```
 
-To learn more about Next.js, take a look at the following resources:
+## API Endpoints
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Health check:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```txt
+GET /api/health
+```
 
-## Deploy on Vercel
+Get all projects:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```txt
+GET /api/projects
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Filter by status:
+
+```txt
+GET /api/projects?status=active
+GET /api/projects?status=draft
+```
+
+Filter by category:
+
+```txt
+GET /api/projects?category=ai_agent
+GET /api/projects?category=backend
+GET /api/projects?category=knowledge_base
+```
+
+Get project by slug:
+
+```txt
+GET /api/projects/:slug
+```
+
+Example:
+
+```txt
+GET /api/projects/ai-agent-workflow-manager
+```
+
+## Pages
+
+Project list:
+
+```txt
+/projects
+```
+
+Filtered project list:
+
+```txt
+/projects?status=active
+/projects?category=ai_agent
+```
+
+Project detail:
+
+```txt
+/projects/ai-agent-workflow-manager
+```
+
+Not found example:
+
+```txt
+/projects/not-existing-project
+```
+
+## Test Scripts
+
+Test Prisma connection:
+
+```bash
+bun scripts/test-prisma.ts
+```
+
+Test project service layer:
+
+```bash
+bun scripts/test-project-service.ts
+```
+
+Test Elysia app without Next.js:
+
+```bash
+bun scripts/test-elysia-app.ts
+```
+
+Test Eden Treaty through Next.js API:
+
+```bash
+bun scripts/test-eden.ts
+```
+
+For `test-eden.ts`, make sure the Next.js dev server is running:
+
+```bash
+bun dev
+```
+
+## Build
+
+```bash
+bun run build
+```
+
+## Current Features
+
+- PostgreSQL runs in Docker
+- Prisma v7 uses generated client output at `src/generated/prisma`
+- Prisma Client uses `@prisma/adapter-pg`
+- Elysia is mounted inside a Next.js Route Handler
+- Eden Treaty client is used by frontend pages
+- Project list page supports filters through URL search params
+- Project detail page supports dynamic route by slug
+- Not found project pages use Next.js `notFound()`
+
+## Notes
+
+This project is intentionally read-only for now.
+
+Not included yet:
+
+- Authentication
+- Create/update/delete API
+- Pagination
+- Search
+- Validation error formatting
+- Production deployment
+- Dockerized Next.js app
+
+These can be added later after the read-only architecture is stable.
